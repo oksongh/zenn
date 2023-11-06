@@ -9,8 +9,7 @@ published: true
 細かいところまでは見てないので自分で確認してください．
 
 # installation
-アップデート用の[スプレッドシート](https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=L5)
-から以下が入ることを確認．
+アップデート用の[スプレッドシート](https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=L5)から以下が入ることを確認．
 
 ```sh
 pushd /tmp                                    
@@ -53,7 +52,8 @@ max，minがbuilt-inになるのはGo 1.21から．さらなるアップデー�
 * Gonumの行列
 * slices.Sort[]()
     sorts.Intsより速いらしい．
-* slices.BinarySearch[]()
+* godsのstack，queue
+    gostlにもあるが，どちらにせよいちいちappendではなくメソッドとしてpush，enqueueが使えるのは楽
 * slices.Contains[]()
 * slices.Index[]()
     for文が1個減って見やすくなるかも．

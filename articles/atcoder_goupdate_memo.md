@@ -9,7 +9,7 @@ published: true
 細かいところまでは見てないので自分で確認してください．
 
 # installation
-アップデート用の[スプレッドシート](https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=L5)から以下が入ることを確認．
+アップデート議論用の[スプレッドシート](https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=L5)から以下が入ることを確認．
 
 ```sh
 pushd /tmp                                    
@@ -38,9 +38,11 @@ repository:https://github.com/gonum/gonum
 Goの数値計算ライブラリ．行列，線形代数，統計，確率分布等．グラフをプロットしたりもできる．Pythonでいうnumpyやmatplotlib的な立ち位置のようだ．2014年にはコミットがあるのでかなり気合の入ったプロジェクトに見える．
 
 # github.com/liyue201/gostl/...
+repository:https://github.com/liyue201/gostl
 これまたGoでデータ構造とアルゴリズムを実装したライブラリ．C++ STLを意識しているようで，今まではC++だと標準だけどGoにはないライブラリがあり，解説のプログラムを移植できないということもあったけど，これで解決するかも．
 
 # golang.org/x/exp/
+repository:https://pkg.go.dev/golang.org/x/exp
 標準ライブラリから外れたり，実験的だったりする機能が入っている．
 golang.org/x/exp/slices，golang.org/x/exp/mapsは1.21からは標準ライブラリとしてslices，mapsとして追加された．
 

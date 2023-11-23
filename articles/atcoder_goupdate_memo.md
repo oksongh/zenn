@@ -24,7 +24,7 @@ go get -u gonum.org/v1/gonum/...
 go get -u github.com/liyue201/gostl/...
 go get -u golang.org/x/exp/
 ```
-# Go ver
+# go ver
 本体はgo1.20.6(1.21ではない)
 
 # github.com/emirpasic/gods/...
@@ -45,24 +45,27 @@ Goの数値計算ライブラリ．行列，線形代数，統計，確率分布
 golang.org/x/exp/slices，golang.org/x/exp/mapsは1.21からは標準ライブラリとしてslices，mapsとして追加された．
 
 # 罠
-max，minがbuilt-inになるのはGo 1.21から．さらなるアップデートが来るまでは自分で実装しよう．
-スライスならsilces.Max()，silces.Min()を使ってもいい．
+go 1.21からはmax，minがbuilt-inになる．が，AtCoderはまだgo1.20.6．さらなるアップデートが来るまでは自分で実装しよう．
+~~スライスならsilces.Max()，silces.Min()を使ってもいい．~~
+slicesもまだ入ってなかった
 
 # 個人的に競プロで使いそうな機能
 * Gonumの行列
-* slices.Sort[]()
-    sorts.Intsより速いらしい．
+* ~~`slices.Sort[]()`~~
+    ~~sorts.Intsより速いらしい．~~ なかった
+    
 * godsのstack，queue
-    gostlにもあるが，どちらにせよいちいちappendではなくメソッドとしてpush，enqueueが使えるのは楽
-* slices.Contains[]()
-* slices.Index[]()
-    for文が1個減って見やすくなるかも．
+    gostlにもあるが，どちらにせよいちいち`=append`ではなくpush，enqueueメソッドが使えるのは楽
+* ~~`slices.Contains[]()`~~
+* ~~`slices.Index[]()`~~
+    ~~for文が1個減って見やすくなるかも．~~
 
 全部見きれてないので見逃した要素が結構あるはず．気が向いたら追加する．
 
 # poem
 今までデータ構造は自作していたのでこれからも続けるつもり．勉強になるし．
 競プロとして本当に速さを求めるときはライブラリを利用すべきでしょうが，理解せずライブラリ使ったら予想外の計算量になるので気をつけなければ(slices.Indexは線形探索なのでO(n)かかる，とか)．
+
 
 
 # 参考文献

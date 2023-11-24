@@ -7,8 +7,6 @@ published: true
 ---
 
 細かいところまでは見てないので自分で確認してください．
-# 追記(20231123)
-**slicesもまだ入ってなかった**
 
 # installation
 アップデート議論用の[スプレッドシート](https://docs.google.com/spreadsheets/d/1HXyOXt5bKwhKWXruzUvfMFHQtBxfZQ0047W7VVObnXI/edit#gid=408033513&range=L5)から以下が入ることを確認．
@@ -50,19 +48,23 @@ golang.org/x/exp/slices，golang.org/x/exp/mapsは1.21からは標準ライブ�
 
 # 罠
 go 1.21からはmax，minがbuilt-inになる．が，AtCoderはまだgo1.20.6．さらなるアップデートが来るまでは自分で実装しよう．
-~~スライスならsilces.Max()，silces.Min()を使ってもいい．~~
-**slicesもまだ入ってなかった**
+スライスならgolang.org/x/exp/を入れてsilces.Max()，silces.Min()を使ってもいい．
+
+# 罠2
+ライブラリ使うときは`go get -u`でアップデートしよう．
+古いバージョンにはsilces.Max()，silces.Min()等が入ってないので．
+
 
 # 個人的に競プロで使いそうな機能
 * Gonumの行列
-* ~~`slices.Sort[]()`~~
-    ~~sorts.Intsより速いらしい．~~ なかった
+* `slices.Sort[]()`
+    sorts.Intsより速いらしい． 
     
 * godsのstack，queue
     gostlにもあるが，どちらにせよいちいち`=append`ではなくpush，enqueueメソッドが使えるのは楽
-* ~~`slices.Contains[]()`~~
-* ~~`slices.Index[]()`~~
-    ~~for文が1個減って見やすくなるかも．~~
+* `slices.Contains[]()`
+* `slices.Index[]()`
+    for文が1個減って見やすくなるかも．
 
 全部見きれてないので見逃した要素が結構あるはず．気が向いたら追加する．
 

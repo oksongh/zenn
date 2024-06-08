@@ -21,15 +21,15 @@ r \ _n\mathrm{C}_r  &= n \ _{n-1}\mathrm{C}_{r-1}\\
                     &= nk\ (k \in \mathbb{Z})
 \end{aligned}
 $$
-$r$,$n$が互いに素なら$k$は$r$の倍数になる。
+$r$,$n$が互いに素なら、$k$は$r$の倍数。
 
-$n \in \mathbb{P},r \in [1, n-1]$ のとき
-nとrは互いに素
+<!-- $n \in \mathbb{P}, 1 \leq r < n$ のとき、nとrは互いに素。 -->
 
 $$
     _n\mathrm{C}_r = n \frac{k}{r}=nk'
 $$
-よって$n \in \mathbb{P},r \in [1, n-1]$ のとき，$_n\mathrm{C}_r$はnの倍数。
+となり、$_n\mathrm{C}_r$はnの倍数。
+$n \in \mathbb{P},1 \leq r < n$ のとき，$r$と$n$は互いに素。したがって$n$が素数のとき、$\ _n\mathrm{C}_r$は$n$で割れる。
 
 # ポイント
 nとrが互いに素なら、という条件を見つけること。

@@ -97,4 +97,7 @@ cargo expand --lib schema::posts --color always| less -R
 
 .filterの有無でinlay hintsが出なくなる。
 どこのバグかわからないがrust-analyzer無しではrust書けないため困る。
+
+追記:既知のバグらしい。
+https://github.com/rust-lang/rust-analyzer/issues/14607
 <!-- もっと力があれば自力で直せるのに -->

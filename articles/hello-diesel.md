@@ -1,6 +1,6 @@
 ---
 title: "備忘録: Diesel入門"
-emoji: "😽"
+emoji: "🚂"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [rust, diesel]
 published: true

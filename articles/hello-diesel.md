@@ -56,16 +56,15 @@ use diesel_demo::*;
 # 個人的につまづいたところ
 ## posts, id, title, body, publishedとは
 
-唐突に出てくるが、これはschema.rsからマクロ生成されたもの。
-
-postsはテーブル名と、id, title, body, publishedはカラム名と対応した構造体。
+唐突に出てくるが、これはschema.rsからマクロ生成された構造体。
+それぞれpostsはテーブル名と、id, title, body, publishedはカラム名と対応した**構造体**。
 これらは[cargo expand](https://crates.io/crates/cargo-expand/)でschema.rsをマクロ展開してみるとなんとなくわかる。
 
 つまり以下のようなuseは
 ```rust
-    use self::schema::posts::dsl::*;
+use self::schema::posts::dsl::*;
 ```
-postsの例では以下と等価。
+postsの例では以下と等価で、
 ```rust
 use schema::posts::columns::id;
 use schema::posts::columns::title;
@@ -73,8 +72,26 @@ use schema::posts::columns::body;
 use schema::posts::columns::published;
 use schema::posts::table as posts;
 ```
+以下のような構造体が生成されている。
+```rust
+pub struct table;
+...
+pub struct id;
+...
+pub struct title;
+...
+pub struct body;
+...
+pub struct published;
+...
+```
 
 さらには、構造体がidといった一般的な名前なので、上記のことを知らなければ変数名と重複してしまっても気づきにくい。
+
+cargo expandでマクロ展開してlessで見るとき
+```bash
+cargo expand --lib schema::posts --color always| less -R
+```
 
 ## rust-analyzerがミスる
 ![](/images/hello-diesel/existfilter.png)

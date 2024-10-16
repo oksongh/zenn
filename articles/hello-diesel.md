@@ -8,31 +8,30 @@ published: true
 
 # Getting Started
 [Diesel](https://diesel.rs/)はRustのORMライブラリ。
-[Getting Started](https://diesel.rs/guides/getting-started)に従って、Dieselを使ってみたときのメモ。
+本家[Getting Started](https://diesel.rs/guides/getting-started)に従って、Dieselを使ってみたときのメモ。
 
 
-# environment
+# 環境
 
 * ubuntu 22.04
 * Rust edition 2021
 * postgresql 14
 
-
-# install
-本家ではなぜか一番下にあるが、diesel_cliのインストールにはcargo使うのが一番楽だと思う。
+# インストール
+diesel_cliのインストールにはcargo使うのが一番楽だと思う。（本家ではなぜか一番下にあるが）
 ```bash
 cargo install diesel_cli
 ```
 
-# run
-実行すると以下のエラーが出た。
+# 実行
+show_posts.rsを実行すると以下のエラーが出た。
 ```bash
 /usr/bin/ld: cannot find -lpq: No such file or directory
 collect2: error: ld returned 1 exit status
 ```
 本家のコラム"A note on installing diesel_cli"と同様で、libpqが見つからないというエラー。
-postgresql以外ならlibpqをlibfooに変えればよい。
 
+## libpqの解決
 ライブラリの検索
 ```bash
 ldconfig -p | grep libpq
@@ -41,12 +40,11 @@ ldconfig -p | grep libpq
 ```bash
 sudo ln -s /lib/x86_64-linux-gnu/libpq.so.5 /lib/x86_64-linux-gnu/libpq.so
 ```
-
 見つからなかったらlibpqをインストール。
 
 参考：https://please-sleep.cou929.nu/20080718.html
 
-# code
+# プログラム全般
 以下をファイル頭に書いておくと楽。
 ```rust
 use self::models::*;
@@ -60,11 +58,11 @@ use diesel_demo::*;
 それぞれpostsはテーブル名と、id, title, body, publishedはカラム名と対応した**構造体**。
 これらは[cargo expand](https://crates.io/crates/cargo-expand/)でschema.rsをマクロ展開してみるとなんとなくわかる。
 
-つまり以下のようなuseは
+つまりpostsの例では以下のuseは
 ```rust
 use self::schema::posts::dsl::*;
 ```
-postsの例では以下と等価で、
+以下と等価で、
 ```rust
 use schema::posts::columns::id;
 use schema::posts::columns::title;
@@ -72,7 +70,7 @@ use schema::posts::columns::body;
 use schema::posts::columns::published;
 use schema::posts::table as posts;
 ```
-以下のような構造体が生成されている。
+以下のような構造体を参照している。
 ```rust
 pub struct table;
 ...

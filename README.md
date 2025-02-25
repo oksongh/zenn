@@ -6,3 +6,6 @@
 ```bash
     npx zenn new:article --slug 記事のスラッグ(ファイル名)
 ```
+```bash
+    npx zenn preview
+```

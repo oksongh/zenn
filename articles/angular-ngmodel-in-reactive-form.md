@@ -87,12 +87,124 @@ export class UserComponent {
 # リアクティブフォームとテンプレートフォームを同時に使いたい
 
 本題。
-`<form [formGroup]="profileForm"></form>`のそとに置くなら多分問題ない。
-中におかないといけないとき
-どっちかに寄せたほうがいいと思うが、様々な理由で混載しなくちゃならないときもある。
-表示の切り替えだけテンプレートフォーム、というか`[(ngModel)]`でやって、本体の入力フォームはリアクティブフォームで書きたいときとか。
+結論。
+リアクティブフォームとテンプレートフォームを同時に使いたいときがある。
+テンプレートフォーム形式のフォームをリアクティブフォームの外に置く場合は問題ないが、中に置くときはテンプレートに`(ngModelOptions)={standalone:true}`を追加する。
 
-ただ混載するだけだとブラウザのコンソールにエラーが出る。
-このエラーを読んでみると、ngModelOptionなるものがある。これを使うとよい。
+## テンプレートフォームをリアクティブフォームの外に置く
+
+特に問題ない。
+```ts:テンプレートフォームが外にある
+import 'zone.js';
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import {FormGroup, FormControl} from '@angular/forms';
+import {ReactiveFormsModule} from '@angular/forms';
+import {FormsModule} from '@angular/forms';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  template: `
+    <!-- reactive form -->
+    <form [formGroup]="profileForm">
+      <label>name:<input type="text" formControlName="name" /></label>
+    </form>
+
+    <!-- template form -->
+    <label>
+      Favorite Framework:<input id="framework" type="text" [(ngModel)]="favoriteFramework" />
+    </label>
+    <h2>Profile Form</h2>
+    <p>{{ profileForm.value.name }}'s favorite framework: {{ favoriteFramework }}</p>
+  `,
+  imports: [ReactiveFormsModule,FormsModule],
+})
+export class App {
+  profileForm = new FormGroup({
+    name: new FormControl(''),
+  });
+  favoriteFramework = '';
+}
+```
+## リアクティブフォームの中にテンプレートフォームを置く
+
+以下のコードではリアクティブフォームの`<form [formGroup]="profileForm"></form>`の中にテンプレートフォームの`[(ngModel)]`が入っている。
+このとき、NG01350というエラーが出る。
+<!-- リアクティブフォームの中ならリアクティブフォームに統一すべきだと思うが、 -->
+<!-- そんなしなくてはならないときもある。 -->
+<!-- 表示の切り替えだけ`[(ngModel)]`で、本体の入力フォームはリアクティブフォームで書きたいときとか。 -->
+
+<!-- ただ混載するだけだとブラウザのコンソールにエラーが出る。 -->
+
 
 基本的に standalone:trueとすると
+
+```ts:Error(NG01350)
+import 'zone.js';
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { FormGroup, FormControl } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  template: `
+    <!-- reactive form -->
+    <form [formGroup]="profileForm">
+      <label>name:<input type="text" formControlName="name" /></label>
+       <!-- template form -->
+      <label>Favorite Framework:<input id="framework" type="text" [(ngModel)]="favoriteFramework" /> </label>
+    </form>
+
+    <h2>Profile Form</h2>
+    <p>{{ profileForm.value.name }}'s favorite framework: {{ favoriteFramework }}</p>
+  `,
+  imports: [ReactiveFormsModule, FormsModule],
+})
+export class App {
+  profileForm = new FormGroup({
+    name: new FormControl(''),
+  });
+  favoriteFramework = '';
+}
+bootstrapApplication(App);
+```
+
+![NG01350](/images/angular-ngmodel-in-reactive-form/NG01350.png)
+
+
+このエラーを読んでみると、2つ提案が書いてある。
+画像に枠つけて
+1. リアクティブフォームにしろ
+<!-- `[(ngModel)]`をformControlに登録できないからformControlNameを使って、リアクティブフォームにしたらどうか？とのこと。 -->
+
+1. standalone:trueを入れろ
+
+`[ngModelOptions]="{standalone:true}"`
+
+これを使うと外側のリアクティブフォーム部分とよい。
+
+
+余談
+
+```ts:微修正
+@Component({
+  template: `
+        ...
+        <input id="framework" type="text" formControlName="framework" [(ngModel)]="favoriteFramework" /> 
+        ...
+  `,
+})
+export class App {
+  profileForm = new FormGroup({
+    name: new FormControl(''),
+    // add
+    framework:new FormControl('')
+  });
+  ...
+}
+
+```

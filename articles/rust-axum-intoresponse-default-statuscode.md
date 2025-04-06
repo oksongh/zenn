@@ -3,18 +3,15 @@ title: "AxumでハンドラーがResult::Errを返してもステータスコー
 emoji: "🕌"
 type: "idea" # tech: 技術記事 / idea: アイデア
 topics: [Rust, Axum]
-published: false
+published: true
 ---
 
 # はじめに
-Axumを使っていて少し意外だったことを紹介するよ。
+結論に自分でも呑み込めていない部分があるけどとりあえず放出。
+Axumを使っていて少し意外だったことを紹介するよ。意外と言っても僕のAPI設計に対する無理解から来ていたことで
 
 # 前提
-以下はTodoアプリのコードの一部で、Routerにパスと対応するリクエストを処理するハンドラーを登録して、リクエストが来たらハンドラーの処理を呼び出すというもの。(.with_stateでDBを注入しているが今回の主題ではない。)
-
-Axumのハンドラーとは`todos_index`,`todos_read`, `todos_create`, `todos_update`, `todos_delete`のようにアプリケーションロジックを記述する関数などである。(正確なことは[公式ドキュメント](https://docs.rs/axum/latest/axum/handler/index.html)を見てほしい。関数だけじゃなくてStringを返すこともできる。)
-
-同様にハンドラーとして登録できる関数は`Result`を返すこともできるのだが、今回の記事では、ハンドラーが`Result::Err`を返しても、200 OKになりうることを紹介する。Errならいい感じに404 Not Foundとか500 Internal Server Errorを返してくれるのかと思っていたが、そんな都合のいいことはなかった。
+以下はTodoアプリのコードの一部で、Routerにパスと対応するリクエストを処理するハンドラーを登録して、リクエストが来たらハンドラーの処理を呼び出す。(.with_stateでDBを注入しているが今回の主題ではない。ハンドラー内でDBを使えるようにするためのもの。)
 
 ```rust
 #[tokio::main]
@@ -35,10 +32,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 async fn todos_index() -> Html<&'static str> {
     Html(include_str!("../index.html"))
 }
+// DBからTodoを取得してJsonで返すハンドラー
+async fn todos_read(State(db): State<DB>) -> impl IntoResponse {
+    let todos = db.read().unwrap();
+    let todos = todos.values().cloned().collect::<Vec<Todo>>();
+    Json(todos)
+}
 ...
 ```
+Axumのハンドラーとは`todos_index`,`todos_read`のようにリクエストを受け取るコントローラー層の関数（など）である。(正確な定義は[公式ドキュメント](https://docs.rs/axum/latest/axum/handler/index.html)にある。)
+
+ハンドラーとして登録できる関数は`Result`を返すこともできるが、今回の記事では、ハンドラーが`Result::Err`を返しても、200 OKになりうることを紹介する。Errならいい感じに404 Not Foundとか500 Internal Server Errorを返してくれるのかと思っていたが、必ずしもエラー系のステータスコードが返るわけではなかった。
+
 # 結論
-先に結論をいうと、Errを返すとしてもどんなエラーなのか(500なのか、404なのか)は要件次第であり、それに伴い、どんなレスポンスを返すかも要件次第であるため、Errだからって一概にステータスコードを決められないよね、という話。
+先に結論を言うと、Errを返すとしてもどんなエラーなのか(500なのか、404なのか)は要件次第であり、それに伴い、どんなレスポンスを返すかも要件次第であるため、Errだからって一概にステータスコードを決められないよね、という話(だと思う)。
 
 ## コードを追ってみる
 
@@ -108,7 +115,11 @@ OkでもErrでも`into_response()`を呼び出していることがわかる。�
 なので、ステータスコードはErrの中身の`into_response()`次第、ということになる。
 
 Stringに対するIntoResponseトレイトも見てみよう。
-```rust
+たらい回しにされているが、String → Cow → Body → Responseを呼び出していることがわかる。
+最終的に呼び出された`Response::new()`ではステータスコードをデフォルトで200 OKにして返すようになっており、Stringへのinto_response()は200 OKを返すことがわかる。
+長くなったが、ハンドラーがResult::Errを返すとErrの中身に対する`into_response()`の結果が返る。今回中身はStringなので200 OKが返ってきた、ということ。
+
+```rust: StringのIntoResponse実装
 impl IntoResponse for String {
     fn into_response(self) -> Response {
         Cow::<'static, str>::Owned(self).into_response()
@@ -155,10 +166,21 @@ impl Default for StatusCode {
     }
 }
 ```
-たらい回しにされているが、Stringの`into_response()`はCowの`into_response()`を呼び出し、CowのはBodyのを、Bodyのは`Response::new()`を呼び出していることがわかる。
-最終的に呼び出された`Response::new()`ではデフォルトの200 OKをステータスコードとして返すようになっている。
 
-長くなったが、ResultのErrを返すと中身の`into_response()`を返す。今回中身はStringなので200 OKを返した、ということ。
 
 # 結論
-Errでもどんなエラーなのか(500なのか、404なのか)は要件次第であり、それに伴い、どんなレスポンスを返すかも要件次第である。それゆえErrだからといって一概にステータスコードを決められるわけではない。Errの中身(Errの`into_response()`)を見て決定する、というAxumの方針は適切そうだ。
+Errでもどんなエラーなのか(500なのか、404なのか)、どんなレスポンスを返すかは要件次第。それゆえErrだからといって一概にステータスコードを決められるわけではない。Errの中身(Errの`into_response()`)を見て決定する、というAxumの方針はしょうがないのだと思う。
+常にステータスコードを指定させる設計にするといいのだろうか？
+
+<!-- # おまけ
+明示的にステータスコードを指定してみた。
+```rust
+async fn result_test(Path(r): Path<u8>) -> Result<(StatusCode,String), (StatusCode, String)> {
+    if r == 1 {
+        Ok((StatusCode::OK,"OK".to_string()))
+    } else {
+        Err((StatusCode::NOT_FOUND, "Error".to_string()))
+    }
+}
+``` -->
+

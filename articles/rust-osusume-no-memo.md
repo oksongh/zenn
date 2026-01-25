@@ -111,7 +111,7 @@ public class Main {
         String str = null;
         if (flag) {
             str = "foo";
-        }        
+        }
         System.out.println(str); // null
     }
 }
@@ -147,10 +147,87 @@ public class Main {
 }
 ```
 
-## 変数の可変性と式指向とnull安全の相性の良さ
+## 本当に不変(イミュータブル)
 
-本題。複数の条件が絡む初期化処理はどこから始まってどこで終わるのか分かりづらくなることが多い。
-さらに再代入があるのでconstやfinalをつけられないので、初期化以降も変更されていることに注意が向いてしまう。
+変数の変更を禁止できるとバグが減り、認知負荷が下がり処理が分かりやすくなるというメリットがある。
+他のメジャーな言語だと`final`や`const`をつけても再代入しか防がず、内部要素は変更できる、という事例がある。
+JavaだとUnmodifiableListがあるが、変更してもコンパイルエラーではなく実行時エラーしか出ない。(UnmodifiableListはリストの変更不可能なビューを提供するのでしょうがない)
+完全に不変にするにはクラス設計をちゃんとするしかない。（JavaだとStringは不変なので本当に設計次第）
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        final List<String> list = new ArrayList<>();
+        list = new ArrayList<>(); // 再代入はコンパイルエラーだが
+        // 要素の変更は防がない
+        list.add("A");
+        list.add("B");
+
+        List<String> unmodifiable = Collections.unmodifiableList(list);
+
+        unmodifiable.add("C");  // 実行時エラー
+
+        // 参照元を変えると反映される
+        list.add("C");
+        System.out.println(unmodifiable); // [A,B,C] 
+    }
+}
+```
+
+Rustでは不変にした場合、再代入も要素の変更もコンパイルエラーで防ぐ。
+
+<!-- 変数宣言の際に不変にする(=`mut`をつけない≃`final`をつける)　⇒  初期化処理がどこで終わるか分かる　⇒　初期化以降は値が変わらないことが保証される　⇒　脳の負荷が下がる -->
+```rust
+fn foo() {
+    // mutをつけると可変
+    let mut vec = vec![1, 2];
+    vec.push(3);
+
+    // デフォルトで不変
+    let vec2 = vec![1,2];
+    vec = vec![3, 4]; // 再代入でコンパイルエラー
+    vec.push(3); // 変更でコンパイルエラー
+}
+```
+
+## 初期化と式指向の相性がよい
+
+`if`や`match`、ブロックが値を返却してくれるので初期化処理がシンプルに書ける。
+Javaと比較する。
+
+<!-- 個人の感覚の話になるが、Rustでは式指向のおかげで初期化処理の都合で変数を可変にする必要が減っているように思う。 -->
+<!-- 初期化処理がどこで終わるかはっきりするというメリットがあると思う。←それは不変にすることで説明済み -->
+個人の感覚の話になるが、Rustでは式指向のおかげで変数を不変にしやすくなっていると思う。
+
+変数を不変に初期化するにはRustでは`let x = 式;`、Javaでは`final var x = 式;`の形にする必要がある。
+Javaでは`式`の部分にはリテラルや関数呼び出し、他の変数などを置けるが、Rustでは加えて`if`や`match`、ブロック`{}`も置けて
+`let x = 式;`で初期化できるバリエーションが多い。
+`if`、`match`、ブロックは複数の処理が必要な場合もこの形式で初期化ができるので便利。
+
+```rust
+fn foo() {
+    let x = "qux";
+    let x = y;
+    let x = bar();
+
+    let x = if z < 100 { "baz" } else { "quux" };
+    let x = match a {
+        100 => "100",
+        200 => "200",
+        _ => "other",
+    };
+}
+```
+
+<!-- 宣言の際に不変にする=mutが消える=finalをつける　⇒  初期化処理がどこで終わるか分かる　⇒　初期化以降は値が変わらないことが保証される　⇒　脳の負荷が下がる -->
+
+(個人的には`let x = yyy`で初期化が完了することを「一撃で初期化」などと呼んでいるのだが、逆に、式指向による「一撃で初期化」がなかったら、変数宣言のたびに`mut`をつけて回らなくてはならず、変数宣言のデフォルトが不変にならなかったのではないか？と想像している。)
+
+### Javaでの実例
+
+以下はJavaの例である。
+不変にするためには、`ブロックで囲む`、`条件の組み替え`などがある。
+個人的には良いと思うが、`ブロックで囲む`はコーディング規約で認められるのか不明。
 
 ```java
 public class Main {
@@ -168,14 +245,72 @@ public class Main {
             str = "bar";
         } else if (flag3) { 
             str = "qux";
-        }
-        
+        }        
         System.out.println(str); // qux
     }
 }
 ```
 
+#### ブロックで囲む
+個人的には問題ないと思うが、コーディング規約で認められるのか分からない。
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        boolean flag = false;
+        boolean flag2 = false;
+        boolean flag3 = true;
+        
+        final String str;
+        {
+            String str2 = "baz";
+            if (flag) {
+                str2 = "foo";
+            }
+            if (flag2) {
+                str2 = "bar";
+            } else if (flag3) { 
+                str2 = "qux";
+            }
+            str = str2;
+        }
+        System.out.println(str); // qux
+    }
+}
+```
+
+#### 条件の組み替え
+デフォルト値が分かりにくいかもしれない。
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        boolean flag = false;
+        boolean flag2 = false;
+        boolean flag3 = true;
+        
+        final String str;
+        
+        if (flag) {
+            str = "foo";
+        }
+        if (flag2) {
+            str = "bar";
+        } else if (flag3) { 
+            str = "qux";
+        } else {
+            str = "baz";
+        }
+        System.out.println(str); // qux
+    }
+}
+```
+
+### Rustでの実例
 Rustでそのまま書くと以下となる。
+不変にする方法はいくつかあるが、`let x = 式;`の形式で初期化できるのは`ブロックで囲む`、`条件の組み替え2`、`match式`。
+手頃なのは`ブロックで囲む`と`シャドーイング`、網羅性が高いのは`match式`である。
+Javaと比べたRustの文法は`match式`があるのはもちろん、`ブロックで囲む`のもブロックの最後を見れば何で初期化されているのか明確になるので良いと思う。
 
 ```rust
 // そのまま
@@ -184,7 +319,6 @@ fn foo() {
     let flag2: bool = false;
     let flag3: bool = true;
 
-    // 値を変更するためにmutをつける必要がある
     let mut str: String = "baz".to_string();
 
     if flag {
@@ -195,13 +329,13 @@ fn foo() {
     } else if flag3 {
         str = "qux".to_string();
     }
-
     println!("{:?}", str); // qux
 }
 ```
 
-不変にするだけならブロックを使うだけでできる。
-同じ名前の変数を新しく宣言すると2番目の。
+#### ブロックで囲む
+不変にするだけならブロックで囲むだけでできる。
+初期化処理の終わりが分かりやすい。
 
 ```rust
 fn foo() {
@@ -228,8 +362,9 @@ fn foo() {
 }
 ```
 
-boolの条件が3つあるので取りうるパターンは2^3(=8)通り、ifで書くと考慮漏れが出ても気づきにくい。
-パターンを網羅するなら`match`が便利だ。
+:::details 条件の組み替え1(コンパイルエラー)
+
+Rustではデフォルト値なしでの変数宣言はコンパイルエラー。
 
 ```rust
 fn foo() {
@@ -237,20 +372,77 @@ fn foo() {
     let flag2: bool = false;
     let flag3: bool = true;
 
-    let str: String = {
-      
-        let str = match (flag,flag2,flag3) {
-            (true, _ ,_) => "foo".to_string(),      // flagがtrueの場合は他のフラグに依らず"foo"
-            (false,true,_) => "bar".to_string(),    // flagがfalse,flag2がtrueの場合は"bar"
-            (false,false,true) => "qux".to_string(),// flagがfalse,flag2がfalse,flag3がtrueの場合は"qux"
-            (_,_,_) => "baz".to_string(),           // それ以外の場合は"baz"
-        };
-        str
+    let mut str: String; // コンパイルエラー
+
+    if flag {
+        str = "foo".to_string();
+    }
+    if flag2 {
+        str = "bar".to_string();
+    } else if flag3 {
+        str = "qux".to_string();
+    } else {
+        str = "baz".to_string();
+    }
+    println!("{:?}", str);
+}
+```
+:::
+
+#### 条件の組み替え2
+`if`のネストが分かりにくい。
+
+```rust
+fn foo() {
+    let flag: bool = false;
+    let flag2: bool = false;
+    let flag3: bool = true;
+
+    // 不変にできた
+    let str: String = if flag {
+        "foo".to_string()
+    } else {
+        if flag2 {
+            "bar".to_string()
+        } else if flag3 {
+            "qux".to_string()
+        } else {
+            "baz".to_string()
+        }
     };
     println!("{:?}", str); // qux
 }
 ```
-ここまでくるとブロックが不要になり、`match式`一本で条件を整理できる。
+
+#### シャドーイング
+シャドーイングで宣言しなおす。
+ブロックで囲んでいない分、初期化処理の終わりが分かりにくい。
+
+```rust
+fn foo() {
+    let flag: bool = false;
+    let flag2: bool = false;
+    let flag3: bool = true;
+    // 一旦可変で宣言しておいて
+    let mut str: String = "baz".to_string();
+
+    if flag {
+        str = "foo".to_string();
+    }
+    if flag2 {
+        str = "bar".to_string();
+    } else if flag3 {
+        str = "qux".to_string();
+    }
+    // 不変にできた
+    let str = str;
+    println!("{:?}", str); // qux
+}
+```
+
+#### `match`式
+`bool`の条件が3つあるので取りうるパターンは2^3(=8)通り、`if`で書くと考慮漏れが出ても気づきにくいため、パターンの網羅ができる`match`式を使うとよく、さらに`let x = 式;`の形式で初期化できた。
+
 ```rust
 fn foo() {
     let flag: bool = false;
@@ -263,42 +455,59 @@ fn foo() {
         (false, false, true) => "qux".to_string(),  // flagがfalse,flag2がfalse,flag3がtrueの場合は"qux"
         (_, _, _) => "baz".to_string(),             // それ以外の場合は"baz"
     };
-
     println!("{:?}", str); // qux
 }
 ```
 
-感覚的な話になるが、Rustでは式指向のおかげで再代入なしで初期化が完了することが多いように感じている。（個人的には「一撃で初期化する」と呼んでいる。）
-そのため、デフォルト値を入れたあと条件に応じて再代入という手順がなくなり、変数を可変に(mut)にする必要が無くなると思う。
-逆に、式指向による「一撃で初期化」がなかったら、変数宣言のたびにmutをつけて回らなくてはならず、Rustが流行らなかったのでは？とさえ思っている。
+### 余談 Javaのswitch式
+Javaにも`match`式に似た、`switch`式が導入されている。が、タプル型がないためRustほど自由度は高くない。
 
+## 没案 Javaでnullでの初期化
 
-Javaでも同じことができるのでは？
+没理由：
+初期化処理が複雑で、一旦`null`で初期化する必要がある場合、Javaでは`final`にできないが、Rust(式指向言語)なら複雑な処理をブロック式に閉じ込めて`let x = 式;`で不変に初期化できるため、変数を不変にするのと式指向とnull安全の相性は良いのでは、と考えていた。
+が、「`null`で初期化して、後で条件で書き換えないといけない場合」が本当に必要な場面がなかった。
 
-近いことはできるが、スコープを区切るためにブロックを使うのが認められるのか分からない。(個人的には良いと思う)
-Rustだとブロックが値を返却するので、Rustのほうがデータの流れが分かりやすいと思う。
+初期化処理が複雑で、安易に一旦`null`で初期化してしまっている例はありえそう。
+その場合、`final`をつけられないが、ブロックで囲めばよいため、特に式指向と絡めて語ることがなかった。
 
 ```java
 public class Main {
     public static void main(String[] args) {
         boolean flag = false;
         boolean flag2 = false;
-        boolean flag3 = true;
+        
+        String str = null; // finalがつけられない
+        if (flag) {
+            // 複雑な条件
+            str = "foo";
+        }
+        if (flag2) {
+            str = "bar";
+        }
+        System.out.println(str); // null
+    }
+}
+```
+不変化。
+```java
+public class Main {
+    public static void main(String[] args) {
+        boolean flag = false;
+        boolean flag2 = false;
         
         final String str;
         {
-            String str2 = "baz";
+            String str2 = null;
             if (flag) {
                 str2 = "foo";
             }
             if (flag2) {
                 str2 = "bar";
-            } else if (flag3) { 
-                str2 = "qux";
             }
             str = str2;
         }
-        System.out.println(str); // qux
+        System.out.println(str); // null
     }
 }
 ```
